@@ -19,6 +19,7 @@ using namespace o2::quality_control::core;
 
 //functions to download data
 string GetCorrectTS(string selrun, vector<string> runs, vector<string> timestamps);
+<<<<<<< Updated upstream
 array<string,2> GetLastRunWithTS(o2::ccdb::CcdbApi ccdbApi, string taskname, string objname);
 array<string,2> GetRunWithTS24hAgo(o2::ccdb::CcdbApi ccdbApi, string taskname, string objname, string timestamp);
 vector<string> GetGoodRunList(o2::ccdb::CcdbApi ccdbApi, string run1, string run2, string runtype, string qcpathstart);
@@ -28,6 +29,17 @@ void DownloadTimestamps(CcdbDatabase *ccdb, o2::ccdb::CcdbApi ccdbApi, string ta
 void DownloadRuns(CcdbDatabase *ccdb, o2::ccdb::CcdbApi ccdbApi, string taskname, string objname, string run1, string run2, vector<string> goodrunlist, int lnum, vector<string> runlistfromfile);
 bool GetListOfHisto(CcdbDatabase* ccdb, string taskname, string objname, vector<long int> timestamps, vector<long int> timestamps2, int lnum, bool isrunknown, bool isperstave, vector<int>runnumbers, vector<int>runnumbers2);
 bool Download(int choice, CcdbDatabase* ccdb, o2::ccdb::CcdbApi ccdbApi, string taskname, string objname, string run1, string run2, vector<string> goodrunlist, long int ts_start, long int ts_end, int lnum, vector<string> runlistfromfile);
+=======
+array<string,2> GetLastRunWithTS(o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname);
+array<string,2> GetRunWithTS24hAgo(o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname, string timestamp);
+vector<string> GetGoodRunList(o2::ccdb::CcdbApi &ccdbApi, string run1, string run2, string runtype, string qcpathstart);
+bool RunShifter(CcdbDatabase *ccdb, int opt, string syncasync);
+bool RunExpert(CcdbDatabase *ccdb, int opt, string syncasync);
+void DownloadTimestamps(CcdbDatabase *ccdb, o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname, long int ts_start, long int ts_end, int lnum);
+void DownloadRuns(CcdbDatabase *ccdb, o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname, string run1, string run2, vector<string> goodrunlist, int lnum, vector<string> runlistfromfile);
+bool GetListOfHisto(o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname, vector<long int> timestamps, vector<long int> timestamps2, int lnum, bool isrunknown, bool isperstave, vector<int>runnumbers, vector<int>runnumbers2);
+bool Download(int choice, CcdbDatabase* ccdb, o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname, string run1, string run2, vector<string> goodrunlist, long int ts_start, long int ts_end, int lnum, vector<string> runlistfromfile);
+>>>>>>> Stashed changes
 string GetOptName(int opt);
 string GetListName(int opt, int ilist);
 
@@ -138,7 +150,11 @@ void getObject(string expOrShift, int whatToDownload)
 //
 //Get Last (most recent) Run
 //
+<<<<<<< Updated upstream
 array<string,2> GetLastRunWithTS(o2::ccdb::CcdbApi ccdbApi, string taskname, string objname){
+=======
+array<string,2> GetLastRunWithTS(o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname){
+>>>>>>> Stashed changes
 
   string objectlist = ccdbApi.list(taskname + "/" + objname,false,"text/plain");
   stringstream ss(objectlist);
@@ -146,7 +162,11 @@ array<string,2> GetLastRunWithTS(o2::ccdb::CcdbApi ccdbApi, string taskname, str
   array<string,2> runts;
 
   while(ss>>word){
+<<<<<<< Updated upstream
     if(word=="Created:"){// take the one related to file creation
+=======
+    if(word=="Validity:"){// take the one related to file creation
+>>>>>>> Stashed changes
       ss>>word;
       runts[0] = word;
     }
@@ -164,7 +184,11 @@ array<string,2> GetLastRunWithTS(o2::ccdb::CcdbApi ccdbApi, string taskname, str
 //
 // Get Run 24h depending on the actual time stamp
 //
+<<<<<<< Updated upstream
 array<string,2> GetRunWithTS24hAgo(o2::ccdb::CcdbApi ccdbApi, string taskname, string objname, string timestamp){
+=======
+array<string,2> GetRunWithTS24hAgo(o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname, string timestamp){
+>>>>>>> Stashed changes
 
   string objectlist = ccdbApi.list(taskname + "/" + objname,false,"text/plain");
   stringstream ss(objectlist);
@@ -176,7 +200,11 @@ array<string,2> GetRunWithTS24hAgo(o2::ccdb::CcdbApi ccdbApi, string taskname, s
   long int stamp_int_24hago = stamp_int_actual - 86400000; //remove number of milliseconds in 1 day
 
   while(ss>>word){
+<<<<<<< Updated upstream
     if(word=="Created:"){// take the one related to file creation
+=======
+    if(word=="Validity:"){// take the one related to file creation
+>>>>>>> Stashed changes
       ss>>word;
       if(stol(word)>=stamp_int_24hago){
         runts[0] = word;
@@ -195,7 +223,11 @@ array<string,2> GetRunWithTS24hAgo(o2::ccdb::CcdbApi ccdbApi, string taskname, s
 }
 
 //
+<<<<<<< Updated upstream
 // Expert mode
+=======
+// Shift mode
+>>>>>>> Stashed changes
 //
 bool RunShifter(CcdbDatabase *ccdb, int opt, std::string syncasync){
 
@@ -231,10 +263,17 @@ bool RunShifter(CcdbDatabase *ccdb, int opt, std::string syncasync){
     }
 
     case 2: { //thr scan
+<<<<<<< Updated upstream
       taskname[0] = qcpathstart+"ITS/MO/ITSTHRTask0";
       taskname[1] = qcpathstart+"ITS/MO/ITSTHRTask1";
       taskname[2] = qcpathstart+"ITS/MO/ITSTHRTask2T";
       taskname[3] = qcpathstart+"ITS/MO/ITSTHRTask2B";
+=======
+      taskname[0] = qcpathstart+"ITS/MO/ITSThresholdCalibrationTask";
+      taskname[1] = qcpathstart+"ITS/MO/ITSThresholdCalibrationTask";
+      taskname[2] = qcpathstart+"ITS/MO/ITSThresholdCalibrationTask";
+      taskname[3] = qcpathstart+"ITS/MO/ITSThresholdCalibrationTask";
+>>>>>>> Stashed changes
       break;
     }
 
@@ -384,6 +423,7 @@ bool RunShifter(CcdbDatabase *ccdb, int opt, std::string syncasync){
       }//end if layernum==-1
       break;
     }//end case 1
+<<<<<<< Updated upstream
 
     case 2: {//thresholds
       //run interval definition
@@ -482,6 +522,44 @@ bool RunShifter(CcdbDatabase *ccdb, int opt, std::string syncasync){
 
   }//end switch
 
+=======
+ 
+    case 2: {//thresholds
+        cout << "THR task does not support shifter mode ";
+        /*
+        //run interval definition
+        cout << "Finding runs in: " << taskname[0] << "ThrNoiseChipAverageIB" << endl;
+        runts2 = GetLastRunWithTS(ccdbApi, taskname[0], "ThrNoiseChipAverageIB"); //take a random object name since run-list is the same.
+        runts1 = GetRunWithTS24hAgo(ccdbApi, taskname[0], "ThrNoiseChipAverageIB", runts2[0]);
+        vector<string> goodrunlist = GetGoodRunList(ccdbApi, runts1[1], runts2[1], "Thr", qcpathstart);
+        cout << "Run interval selected:       " << runts1[1] << "-" << runts2[1] << endl;
+        cout << "Timestamp interval selected: " << runts1[0] << "-" << runts2[0] << endl;
+
+        outputfile = new TFile(Form("Data/Output%s_%s_from_%s%s_to_%s%s.root", layername.c_str(), optname.c_str(), suffix.c_str(), runts1[1].c_str(), suffix.c_str(), runts2[1].c_str()), "RECREATE");
+        outputfile->cd();
+
+        if (layernum >= 0) {
+                    string objname = "ThrNoiseChipAverageIB";
+                    cout << "\nAll data in " << taskname[layernum] + "/" + objname << " between run" << runts1[1] << " and run" << runts2[1] << " are going to be downloaded." << endl;
+                    Download(1, ccdb, ccdbApi, taskname[layernum], objname, runts1[1], runts2[1], vector<string>(), stol(runts1[0]), stol(runts2[0]), layernum, vector<string>());
+         
+        }//end if layernum>=0
+
+        else if (layernum == -1) {
+                    for (int ilay = 0; ilay <= 2; ilay++) {
+                        string objname = "ThrNoiseChipAverageIB";
+                        cout << "\nAll data in " << taskname[ilay] + "/" + objname << " between run" << runts1[1] << " and run" << runts2[1] << " are going to be downloaded." << endl;
+                        Download(1, ccdb, ccdbApi, taskname[ilay], objname, runts1[1], runts2[1], goodrunlist, stol(runts1[0]), stol(runts2[0]), ilay, vector<string>());
+                    }
+              
+        }//end if layernum==-1
+        break;
+        */
+    }// end of case 2
+    
+  }//end switch
+ 
+>>>>>>> Stashed changes
   outputfile->Close();
   delete outputfile;
 
@@ -533,8 +611,11 @@ bool RunExpert(CcdbDatabase *ccdb, int opt, std::string syncasync){
 
   }
 
+<<<<<<< Updated upstream
   //  cin>>layernum;
 
+=======
+>>>>>>> Stashed changes
   //taskname
   string taskname[8]    = {qcpathstart+"ITS/MO/FHRTask", qcpathstart+"ITS/MO/FHRTask", qcpathstart+"ITS/MO/FHRTask", qcpathstart+"ITS/MO/FHRTask",  qcpathstart+"ITS/MO/FHRTask",  qcpathstart+"ITS/MO/FHRTask",  qcpathstart+"ITS/MO/FHRTask",  qcpathstart+"ITS/MO/FHRTask"};
 
@@ -602,6 +683,7 @@ bool RunExpert(CcdbDatabase *ccdb, int opt, std::string syncasync){
 
     case 2: { //thr scan
       // path name to be changed
+<<<<<<< Updated upstream
       taskname[0] = qcpathstart+"ITS/MO/ITSTHRTask0";
       taskname[1] = qcpathstart+"ITS/MO/ITSTHRTask1";
       taskname[2] = qcpathstart+"ITS/MO/ITSTHRTask2T";
@@ -610,6 +692,9 @@ bool RunExpert(CcdbDatabase *ccdb, int opt, std::string syncasync){
       taskname[5] = qcpathstart+"ITS/MO/ITSTHRTask1";
       taskname[6] = qcpathstart+"ITS/MO/ITSTHRTask2T";
       taskname[7] = qcpathstart+"ITS/MO/ITSTHRTask2B";
+=======
+      taskname[0] = qcpathstart+"ITS/MO/ITSThresholdCalibrationTask";
+>>>>>>> Stashed changes
 
       break;
     }
@@ -766,7 +851,11 @@ bool RunExpert(CcdbDatabase *ccdb, int opt, std::string syncasync){
     default: suffix="";
   }
   string optname = GetOptName(opt);
+<<<<<<< Updated upstream
   outputfile = new TFile(Form("Data/Output%s_%s_from_%s%s_to_%s%s%s.root",layername.c_str(), optname.c_str(), suffix.c_str(),nums[0].c_str(), suffix.c_str(), nums[1].c_str(), adderrordata? "_w_error_data":""), "RECREATE");
+=======
+  outputfile = new TFile(Form("Data/Output%s_%s_from_%s%s_to_%s%s.root",layername.c_str(), optname.c_str(), suffix.c_str(),nums[0].c_str(), suffix.c_str(), nums[1].c_str()), "RECREATE");
+>>>>>>> Stashed changes
   outputfile->cd();
 
   //Download depending on the option (opt)
@@ -817,9 +906,15 @@ bool RunExpert(CcdbDatabase *ccdb, int opt, std::string syncasync){
           switch(il){
             case 0: {
               for(int ilay=ilayMin; ilay<=ilayMax; ilay++){
+<<<<<<< Updated upstream
 		int ilayEff=ilay;
 		if (IBorOB==1) ilayEff=ilay+1;
 		else if (IBorOB==2 && ilay>=3) ilayEff=ilay+1;
+=======
+		        int ilayEff=ilay;
+		        if (IBorOB==1) ilayEff=ilay+1;
+	        	else if (IBorOB==2 && ilay>=3) ilayEff=ilay+1;
+>>>>>>> Stashed changes
                 string objname = Form("Occupancy/Layer%d/Layer%dChipStave",ilay,ilay);
                 cout<<"\nAll data in "<<taskname[ilayEff]+"/"+objname<<" between run"<<run1<<" and run"<<run2<<" are going to be downloaded."<<endl;
                 Download(choice, ccdb, ccdbApi, taskname[ilayEff], objname, run1, run2, vector<string>(), (long)ts_start, (long)ts_end, ilay, runlistfromfile);
@@ -829,9 +924,15 @@ bool RunExpert(CcdbDatabase *ccdb, int opt, std::string syncasync){
 
             case 1: {
               for(int ilay=ilayMin; ilay<=ilayMax; ilay++){
+<<<<<<< Updated upstream
 		int ilayEff=ilay;
 		if (IBorOB==1) ilayEff=ilay+1;
 		else if (IBorOB==2 && ilay>=3) ilayEff=ilay+1;
+=======
+		        int ilayEff=ilay;
+		        if (IBorOB==1) ilayEff=ilay+1;
+		        else if (IBorOB==2 && ilay>=3) ilayEff=ilay+1;
+>>>>>>> Stashed changes
                 for(int istave=0; istave<nStavesInLay[ilay]; istave++){
                   if(ilay==2){
                     if(istave>9){//L2B
@@ -862,6 +963,7 @@ bool RunExpert(CcdbDatabase *ccdb, int opt, std::string syncasync){
       }//end if layernum==-1
       break;
     }//end case 1
+<<<<<<< Updated upstream
 
     case 2: {// thresholds
       vector<string> goodrunlist = GetGoodRunList(ccdbApi, run1, run2, "Thr", qcpathstart); //good run list
@@ -959,11 +1061,45 @@ bool RunExpert(CcdbDatabase *ccdb, int opt, std::string syncasync){
         }//end loop on lists
       }//end if layernum==-1
       break;
+=======
+    case 2: {// thresholds
+        string tskn = "qc/ITS/MO/ITSThresholdCalibrationTask";
+
+                    string objname = "THRChipAverageIB";
+                    cout << "\nAll data in " << tskn + "/" + objname << " between run" << run1 << " and run" << run2 << " are going to be downloaded." << endl;
+                    Download(choice, ccdb, ccdbApi, tskn, objname, run1, run2, vector<string>(), (long)ts_start, (long)ts_end, layernum, runlistfromfile);
+                      
+                    objname = "THRChipAverageML";
+                    cout << "\nAll data in " << tskn + "/" + objname << " between run" << run1 << " and run" << run2 << " are going to be downloaded." << endl;
+                    Download(choice, ccdb, ccdbApi, tskn, objname, run1, run2, vector<string>(), (long)ts_start, (long)ts_end, layernum, runlistfromfile);
+                        
+                    objname = "THRChipAverageOL";
+                    cout << "\nAll data in " << tskn + "/" + objname << " between run" << run1 << " and run" << run2 << " are going to be downloaded." << endl;
+                    Download(choice, ccdb, ccdbApi, tskn, objname, run1, run2, vector<string>(), (long)ts_start, (long)ts_end, layernum, runlistfromfile);
+
+                    string objname = "ThrNoiseChipAverageIB";
+                    cout << "\nAll data in " << tskn + "/" + objname << " between run" << run1 << " and run" << run2 << " are going to be downloaded." << endl;
+                    Download(choice, ccdb, ccdbApi, tskn, objname, run1, run2, vector<string>(), (long)ts_start, (long)ts_end, layernum, runlistfromfile);
+
+                    objname = "ThrNoiseChipAverageML";
+                    cout << "\nAll data in " << tskn + "/" + objname << " between run" << run1 << " and run" << run2 << " are going to be downloaded." << endl;
+                    Download(choice, ccdb, ccdbApi, tskn, objname, run1, run2, vector<string>(), (long)ts_start, (long)ts_end, layernum, runlistfromfile);
+
+                    objname = "ThrNoiseChipAverageOL";
+                    cout << "\nAll data in " << tskn + "/" + objname << " between run" << run1 << " and run" << run2 << " are going to be downloaded." << endl;
+                    Download(choice, ccdb, ccdbApi, tskn, objname, run1, run2, vector<string>(), (long)ts_start, (long)ts_end, layernum, runlistfromfile);
+
+        break;
+>>>>>>> Stashed changes
     }// end of case 2
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+<<<<<<< Updated upstream
 case 3: { //tracks
+=======
+    case 3: { //tracks
+>>>>>>> Stashed changes
       string trackname = (syncasync == "async") ? "Tracks" : "ITSTrackTask";
       Download(choice, ccdb, ccdbApi, qcpathstart+"ITS/MO/"+trackname, "AngularDistribution", run1, run2, vector<string>(), (long)ts_start, (long)ts_end, 0, runlistfromfile);
       Download(choice, ccdb, ccdbApi, qcpathstart+"ITS/MO/"+trackname, "EtaDistribution", run1, run2, vector<string>(), (long)ts_start, (long)ts_end, 0, runlistfromfile);
@@ -980,7 +1116,11 @@ case 3: { //tracks
       break;
     }//end of case 3
     //////////////////////////////////////////////////////////
+<<<<<<< Updated upstream
 case 4: { //FEE
+=======
+    case 4: { //FEE
+>>>>>>> Stashed changes
       cout<<"\nAll data in "<<qcpathstart+"ITS/MO/ITSFEE/LaneStatus/LaneStatusFlagError(ERROR,FAULT,WARNING)"<<" between run"<<run1<<" and run"<<run2<<" downloading..."<<endl;
       Download(choice, ccdb, ccdbApi, qcpathstart+"ITS/MO/ITSFEE","LaneStatus/laneStatusFlagERROR", run1, run2, vector<string>(), (long)ts_start, (long)ts_end, 0, runlistfromfile);
       Download(choice, ccdb, ccdbApi, qcpathstart+"ITS/MO/ITSFEE","LaneStatus/laneStatusFlagFAULT", run1, run2, vector<string>(), (long)ts_start, (long)ts_end, 0, runlistfromfile);
@@ -989,7 +1129,14 @@ case 4: { //FEE
       Download(choice, ccdb, ccdbApi, qcpathstart+"ITS/MO/ITSFEE","LaneStatus/laneStatusFlagCumulativeFAULT", run1, run2, vector<string>(), (long)ts_start, (long)ts_end, 0, runlistfromfile);
       Download(choice, ccdb, ccdbApi, qcpathstart+"ITS/MO/ITSFEE","LaneStatus/laneStatusFlagCumulativeWARNING", run1, run2, vector<string>(), (long)ts_start, (long)ts_end, 0, runlistfromfile);
       string objname = "TriggerVsFeeid";
+<<<<<<< Updated upstream
       cout<<"\nAll data in "<<qcpathstart<< "ITS/MO/ITSFEE/"<<objname<<" between run"<<run1<<" and run"<<run2<<" are going to be downloaded."<<endl;
+=======
+      cout<<"\nAll data in "<<qcpathstart<< "ITS/MO/ITSFEE/"<<objname<<" between run"<<run1<<" and run"<<run2<<" are going to be downloaded."<<endl;  
+      Download(choice, ccdb, ccdbApi, qcpathstart+"ITS/MO/ITSFEE", objname, run1, run2, vector<string>(), (long)ts_start, (long)ts_end, 0, runlistfromfile);
+      objname = "RDHSummaryCumulative";
+      cout<<"\nAll data in "<<qcpathstart<< "ITS/MO/ITSFEE/"<<objname<<" between run"<<run1<<" and run"<<run2<<" are going to be downloaded."<<endl;  
+>>>>>>> Stashed changes
       Download(choice, ccdb, ccdbApi, qcpathstart+"ITS/MO/ITSFEE", objname, run1, run2, vector<string>(), (long)ts_start, (long)ts_end, 0, runlistfromfile);
       break;
     }//end of case 4
@@ -1032,32 +1179,53 @@ case 4: { //FEE
 //
 // Return run list of GOOD runs = runs in all CCDB paths for TH2
 //
+<<<<<<< Updated upstream
 vector<string> GetGoodRunList(o2::ccdb::CcdbApi ccdbApi, string run1, string run2, string runtype, string qcpathstart){//run type can be "Thr" or "Fhr"
 
   string objnames[4] = {"Threshold/Layer0/Threshold_Vs_Chip_and_Stave", "Threshold/Layer1/Threshold_Vs_Chip_and_Stave", "Threshold/Layer2/Threshold_Vs_Chip_and_Stave", "Threshold/Layer2/Threshold_Vs_Chip_and_Stave"};
   string tasknames[4] = {qcpathstart+"ITS/MO/ITSTHRTask0", qcpathstart+"ITS/MO/ITSTHRTask1", qcpathstart+"ITS/MO/ITSTHRTask2T", qcpathstart+"ITS/MO/ITSTHRTask2B"};
+=======
+vector<string> GetGoodRunList(o2::ccdb::CcdbApi &ccdbApi, string run1, string run2, string runtype, string qcpathstart){//run type can be "Thr" or "Fhr"
+
+  string objnames[3] = {"ThrNoiseChipAverageIB", "ThrNoiseChipAverageIB", "ThrNoiseChipAverageIB"};
+  string tasknames[3] = {qcpathstart+"ITS/MO/ITSThresholdCalibrationTask", qcpathstart+"ITS/MO/ITSThresholdCalibrationTask", qcpathstart+"ITS/MO/ITSThresholdCalibrationTask"};
+>>>>>>> Stashed changes
 
   //in case of FHR
   if(runtype=="Fhr"){
     objnames[0] = "Occupancy/Layer0/Layer0ChipStave";
     objnames[1] = "Occupancy/Layer1/Layer1ChipStave";
     objnames[2] = "Occupancy/Layer2/Layer2ChipStave";
+<<<<<<< Updated upstream
     objnames[3] = "Occupancy/Layer2/Layer2ChipStave";
+=======
+>>>>>>> Stashed changes
 
     tasknames[0] = qcpathstart+"ITS/MO/ITSFHR";
     tasknames[1] = qcpathstart+"ITS/MO/ITSFHR";
     tasknames[2] = qcpathstart+"ITS/MO/ITSFHR";
+<<<<<<< Updated upstream
     tasknames[3] = qcpathstart+"ITS/MO/ITSFHR";
   }
 
   vector<vector<string>> runlists;
   for(int i=0; i<4; i++){//get run list between run1 and run2 for all the paths defined above
+=======
+  }
+
+  vector<vector<string>> runlists;
+  for(int i=0; i<3; i++){//get run list between run1 and run2 for all the paths defined above
+>>>>>>> Stashed changes
     string objectlist = ccdbApi.list(tasknames[i] + "/" + objnames[i],false,"text/plain");
     stringstream ss(objectlist);
     string word;
     vector<string>runlist;
     while(ss>>word){
+<<<<<<< Updated upstream
       if(word=="Created:"){// take the one related to file creation
+=======
+      if(word=="Validity:"){// take the one related to file creation
+>>>>>>> Stashed changes
         ss>>word;
         //alltimestampsALT.push_back(word);
       }
@@ -1102,7 +1270,11 @@ vector<string> GetGoodRunList(o2::ccdb::CcdbApi ccdbApi, string run1, string run
 //
 // Download data based on timestamps
 //
+<<<<<<< Updated upstream
 void DownloadTimestamps(CcdbDatabase* ccdb, o2::ccdb::CcdbApi ccdbApi, string taskname, string objname, long int ts_start, long int ts_end, int lnum){
+=======
+void DownloadTimestamps(CcdbDatabase* ccdb, o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname, long int ts_start, long int ts_end, int lnum){
+>>>>>>> Stashed changes
 
   //Extract all the time stamps of the object
   string objectlist = ccdbApi.list(taskname + "/" + objname,false,"text/plain");
@@ -1110,7 +1282,11 @@ void DownloadTimestamps(CcdbDatabase* ccdb, o2::ccdb::CcdbApi ccdbApi, string ta
   string word;
   vector <string> timestamps;
   while(ss>>word){
+<<<<<<< Updated upstream
     if(word=="Created:"){// take the one related to file creation
+=======
+    if(word=="Validity:"){// take the one related to file creation
+>>>>>>> Stashed changes
       ss>>word;
       timestamps.push_back(word);
     }
@@ -1140,7 +1316,11 @@ void DownloadTimestamps(CcdbDatabase* ccdb, o2::ccdb::CcdbApi ccdbApi, string ta
 
   bool isperstave = 0;
   if(objname.find("HITMAP")!=string::npos) isperstave = 1;
+<<<<<<< Updated upstream
   GetListOfHisto(ccdb, taskname, objname, timestamps_selperiod, vector<long int>(), lnum, 0, isperstave, vector<int>(), vector<int>());
+=======
+  GetListOfHisto(ccdbApi, taskname, objname, timestamps_selperiod, vector<long int>(), lnum, 0, isperstave, vector<int>(), vector<int>());
+>>>>>>> Stashed changes
 
   timestamps_selperiod.clear();
 }
@@ -1149,7 +1329,11 @@ void DownloadTimestamps(CcdbDatabase* ccdb, o2::ccdb::CcdbApi ccdbApi, string ta
 //
 // Download data based on run numbers - available in metadata from 03/07/2019 21.49 (run 582 --> fake hit scan)
 //
+<<<<<<< Updated upstream
 void DownloadRuns(CcdbDatabase* ccdb, o2::ccdb::CcdbApi ccdbApi, string taskname, string objname, string run1, string run2, vector<string> goodrunlist, int lnum, vector<string> runlistfromfile){
+=======
+void DownloadRuns(CcdbDatabase* ccdb, o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname, string run1, string run2, vector<string> goodrunlist, int lnum, vector<string> runlistfromfile){
+>>>>>>> Stashed changes
   
   bool isQCAsync = taskname.find("qc_async")!=string::npos;
   
@@ -1166,7 +1350,11 @@ void DownloadRuns(CcdbDatabase* ccdb, o2::ccdb::CcdbApi ccdbApi, string taskname
 
   //filter normal path but correct timestamps with the one from alternative path (if needed)
   while(ss>>word){
+<<<<<<< Updated upstream
     if(word=="Created:"){// take the one related to file creation
+=======
+    if(word=="Validity:"){// take the one related to file creation
+>>>>>>> Stashed changes
       ss>>word;
       alltimestamps.push_back(word);
     }
@@ -1250,7 +1438,11 @@ void DownloadRuns(CcdbDatabase* ccdb, o2::ccdb::CcdbApi ccdbApi, string taskname
 
   bool isperstave = 0;
   if(objname.find("HITMAP")!=string::npos) isperstave = 1;
+<<<<<<< Updated upstream
   GetListOfHisto(ccdb, taskname, objname, timestamps_selperiod, vector<long int>(), lnum, 1, isperstave, runs_selperiod, vector<int>());
+=======
+  GetListOfHisto(ccdbApi, taskname, objname, timestamps_selperiod, vector<long int>(), lnum, 1, isperstave, runs_selperiod, vector<int>());
+>>>>>>> Stashed changes
 
   timestamps_selperiod.clear();
   runs_selperiod.clear();
@@ -1276,7 +1468,11 @@ string GetCorrectTS(string selrun, vector<string> runs, vector<string> timestamp
 //
 //Get list of histogram inside an object
 //
+<<<<<<< Updated upstream
 bool GetListOfHisto(CcdbDatabase* ccdb, string taskname, string objname, vector<long int> timestamps, vector<long int> timestamps2, int lnum, bool isrunknown, bool isperstave, vector<int>runnumbers, vector<int>runnumbers2){
+=======
+bool GetListOfHisto(o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname, vector<long int> timestamps, vector<long int> timestamps2, int lnum, bool isrunknown, bool isperstave, vector<int>runnumbers, vector<int>runnumbers2){
+>>>>>>> Stashed changes
 
   string qcpathstart;
   if(taskname.find("qc_async")!=string::npos) {
@@ -1294,6 +1490,7 @@ bool GetListOfHisto(CcdbDatabase* ccdb, string taskname, string objname, vector<
       stvnum = objname.substr(objname.find("Stave")+5,1);
   }
 
+<<<<<<< Updated upstream
  // cout<<"timestamps  size: "<<timestamps.size()<<endl;
  // cout<<"timestamps2 size: "<<timestamps2.size()<<endl;
 
@@ -1354,6 +1551,21 @@ bool GetListOfHisto(CcdbDatabase* ccdb, string taskname, string objname, vector<
     string c = obj->ClassName();
     TH2 *h2s = 0x0;
     TH2 *h2sbis = 0x0; //for L2B only
+=======
+
+  //General case
+  for(int i=0; i<(int)timestamps.size();i++){	  
+    std::map<std::string, std::string> metadata;
+    metadata["RunNumber"] = std::to_string(runnumbers[i]);
+    auto *obj = ccdbApi.retrieveFromTFileAny<TObject>(taskname+"/"+objname, metadata, timestamps[i]);
+    if (obj == nullptr) {
+      cerr << "Failed to get TObject for timestamp: " << timestamps[i]<< endl;
+      return 0;
+    }
+
+    string c = obj->ClassName();
+    TH2 *h2s = 0x0; 
+>>>>>>> Stashed changes
     TH1 *h1s = 0x0;
     THnSparse *hSp = 0x0;
     TTree *tree;
@@ -1518,6 +1730,7 @@ if(objname.find("LaneStatus") != string::npos){
         histname = Form("h2_err%s_%ld", isrunknown ? Form("_run%d",runnumbers[i]) : "", timestamps[i]);
       else if(objname.find("Trigger")!=string::npos)
         histname = Form("h2_trg%s_%ld", isrunknown ? Form("_run%d",runnumbers[i]) : "", timestamps[i]);
+<<<<<<< Updated upstream
       else
         histname = Form("h2_L%d%s%s_%ld", lnum, isperstave ? Form("_Stv%s",stvnum.c_str()) : "", isrunknown ? Form("_run%d",runnumbers[i]) : "", timestamps[i]);
 
@@ -1527,6 +1740,17 @@ if(objname.find("LaneStatus") != string::npos){
         h2sbis = dynamic_cast<TH2*>(obj2->Clone(Form("%s_L2B",histname.c_str())));
         h2s->Add(h2sbis);
       }
+=======
+      else if(objname.find("RDHSummaryCumulative")!=string::npos)
+	    histname = Form("h2_RDH%s_%ld", isrunknown ? Form("_run%d",runnumbers[i]) : "", timestamps[i]);
+      else if(objname.find("Thr")!=string::npos){
+          histname = Form("h2%s%s_%s_%ld", isperstave ? Form("_Stv%s", stvnum.c_str()) : "", isrunknown ? Form("_run%d", runnumbers[i]) : "", objname.substr(objname.size() - 2, 2).c_str(), timestamps[i]);
+      }
+      else {
+	    histname = Form("h2_L%d%s%s_%ld", lnum, isperstave ? Form("_Stv%s",stvnum.c_str()) : "", isrunknown ? Form("_run%d",runnumbers[i]) : "", timestamps[i]);
+      }
+      h2s = dynamic_cast<TH2*>(obj->Clone(histname.c_str())); 
+>>>>>>> Stashed changes
       outputfile->cd();
       h2s->Write();
     }
@@ -1561,7 +1785,11 @@ if(objname.find("LaneStatus") != string::npos){
 //
 // Download depending on the choice
 //
+<<<<<<< Updated upstream
 bool Download(int choice, CcdbDatabase* ccdb, o2::ccdb::CcdbApi ccdbApi, string taskname, string objname, string run1, string run2, vector<string> goodrunlist, long int ts_start, long int ts_end, int lnum, vector<string> runlistfromfile){
+=======
+bool Download(int choice, CcdbDatabase* ccdb, o2::ccdb::CcdbApi &ccdbApi, string taskname, string objname, string run1, string run2, vector<string> goodrunlist, long int ts_start, long int ts_end, int lnum, vector<string> runlistfromfile){
+>>>>>>> Stashed changes
 
   switch(choice){
     case 1: {
