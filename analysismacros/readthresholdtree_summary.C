@@ -10,7 +10,9 @@
 #include <string>
 #include <array>
 #include <map>
+#include <unordered_map>
 #include <iostream>
+#include "TFile.h"
 #include "ITSMFTReconstruction/ChipMappingITS.h"
 
 const int chipIDmin[7] = {0, 108, 252, 432,3120, 6480, 14712};
@@ -19,20 +21,19 @@ const int chipIDmax[7] = {107, 251, 431,3119, 6479, 14711, 24119};
 short int chipToLayer(int chipid);
 
 //MAIN
-void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::string title = "THR .... runnum ....", std::string stavemap = "stave for which you want thr map"){
+void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::string title = "THR .... runnum ....", std::string stavemap = "stave for which you want thr map", bool zoomIB = false, bool isDigital = false, bool isShort = true){
 
   //gStyle->SetOptStat(0000);
   //open file
   TFile *infile = TFile::Open(treepath.c_str());
   TTree *thtree = (TTree*)infile->Get("ITS_calib_tree");
   short int chipid[1024], row[1024], thr[1024];
-  char noise[1024];
+  float  noise[1024];
   bool success[1024];
   const short int nStaves[7] = {12,16,20,24,30,42,48};
   int runnum = std::stoi(treepath.substr(treepath.find_last_of('/')+1,6));
   std::unordered_map<int,std::array<int,5>> countsum;
   std::unordered_map<int,std::array<int,2>> countsuccess_nolimits;
-  std::unordered_map<int,std::array<int,2>> countsuccess_highnoise;
   std::unordered_map<short int,std::vector<short int>> trackrow;
 
   TH2F *hChipOutRange = new TH2F("hChipOutRange","Hits out of injected range (all superimposed); Col; Row",1024,-0.5,1023.5,512,-0.5,511.5);
@@ -42,8 +43,12 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
   }
   TH1F *hUnSuccess_nolimits = new TH1F("hUnSuccess_nolimits","Un-success rate per chip - S-curve with no limits; Chip ID; unsuccess rate (%)",24120,-0.5,24119.5);
   hUnSuccess_nolimits->SetStats(0);
-  TH1F *hUnSuccess_highnoise = new TH1F("hUnSuccess_highnoise","Un-success rate per chip - S-curve with noise>= 15 e-; Chip ID; unsuccess rate (%)",24120,-0.5,24119.5);
-  hUnSuccess_highnoise->SetStats(0);
+  TH2F *hUnSuccess2D_IB = new TH2F("hUnsuccess2D_IB","Percentage of unsuccess per chip (IB); Chip; Stave", 9,-0.5,8.5,48,-0.5,47.5);
+  hUnSuccess2D_IB->SetStats(0);
+  TH2F *hUnSuccess2D_ML = new TH2F("hUnsuccess2D_ML","Percentage of unsuccess per chip (ML); Chip; Stave", 112,-0.5,111.5,54,-0.5,53.5);
+  hUnSuccess2D_ML->SetStats(0);
+  TH2F *hUnSuccess2D_OL = new TH2F("hUnsuccess2D_OL","Percentage of unsuccess per chip (OL); Chip; Stave", 196,-0.5,195.5,90,-0.5,89.5);
+  hUnSuccess2D_OL->SetStats(0);
   TH2F *hThrChip = new TH2F("hThrChip","Threshold distribution per chip; ChipID; Threshold (e-)", 24120, -0.5, 24119.5, 100,30,400);
   hThrChip->SetStats(0);
   TH2F *hNoiseChip = new TH2F("hNoiseChip","Noise distribution per chip; ChipID; Noise (e-)", 24120, -0.5, 24119.5, 30,0,40);
@@ -56,25 +61,33 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
   TH1F *hRowsCountDistML = new TH1F("hRowsCountDistML","Rows collected per chip in ML; Number of rows; Counts",20,-0.5,19.5);
   TH1F *hRowsCountDistOL = new TH1F("hRowsCountDistOL","Rows collected per chip in OL; Number of rows; Counts",20,-0.5,19.5);
   hRowsCountIB->SetStats(0); hRowsCountML->SetStats(0); hRowsCountOL->SetStats(0);
-
+  
+  TH1F *hthr1chip = new TH1F("hthr","hthr; Thr (e); Counts",100,0,400);
   //stave map
   TH2F *hThrMapStave = 0;
+  TH2F *hThrMapL[3]; //thr maps of IB layers
+  for(int i=0; i<3; i++){
+    hThrMapL[i] = new TH2F(Form("ThrMapL%d",i),Form("Threshold map L%d; Column; Row",i), 1024*9, 0, 1024*9, isShort ? 11*nStaves[i] : 512*nStaves[i], 0, isShort ? 11*nStaves[i] : 512*nStaves[i]);
+    hThrMapL[i]->SetStats(0);
+  }
   if(stavemap.find("L0")!=string::npos || stavemap.find("L1")!=string::npos || stavemap.find("L2")!=string::npos){
     hThrMapStave = new TH2F("hThrMapStave",Form("Thr map %s; Col; Row",stavemap.c_str()), 1024*9, -0.5, 1024*9-0.5, 512,-0.5,512-0.5);
   }
   else if(stavemap.find("L3")!=string::npos || stavemap.find("L4")!=string::npos){
-    hThrMapStave = new TH2F("hThrMapStave",Form("Thr map %s; Col; Row",stavemap.c_str()), 1024*28, 0, 1024*28, 512*2,0,512*2);
+    hThrMapStave = new TH2F("hThrMapStave",Form("Thr map %s; Col; Row",stavemap.c_str()), 1024*28, 0, 1024*28, 512*4,0,512*4);
   }
   else{
-    hThrMapStave = new TH2F("hThrMapStave",Form("Thr map %s; Col; Row",stavemap.c_str()), 1024*49, 0, 1024*49, 512*2,0,512*2);
+    hThrMapStave = new TH2F("hThrMapStave",Form("Thr map %s; Col; Row",stavemap.c_str()), 1024*49, 0, 1024*49, 512*4,0,512*4);
   }
   hThrMapStave->SetStats(0);
 
   thtree->SetBranchAddress("chipid",&chipid[0]);
   thtree->SetBranchAddress("row",&row[0]);
-  thtree->SetBranchAddress("thr",&thr[0]);
-  thtree->SetBranchAddress("noise",&noise[0]);
-  thtree->SetBranchAddress("success",&success[0]);
+  thtree->SetBranchAddress(isDigital?"n_hits":"thr",&thr[0]);
+  if(!isDigital) {
+    thtree->SetBranchAddress("noise",&noise[0]);
+    thtree->SetBranchAddress("success",&success[0]);
+  }
 
   long int nentries = thtree->GetEntries();
   o2::itsmft::ChipMappingITS mp;
@@ -118,7 +131,12 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
       continue;
     }
     for(int icol=0; icol<1024; icol++){//loop on columns
-
+      
+      //ThrMap L0
+      if(layer<3) {
+        hThrMapL[layer]->SetBinContent(icol+1+1024*chipInMod, isShort ? ((crow/50)+1 + 11*sta) : (crow+1 + 512*sta), thr[icol]);
+      }
+      
       //Fill threshold map of selected stave (NOTE: no cuts applied on the tree!!)
       if(staveid==stavemap){
         if(layer<3){
@@ -135,7 +153,7 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
       }
 
       //count unsuccess per chipid
-      if(!success[icol] && thr[icol]<1e-9 && noise[icol]<1e-9){
+      if(!success[icol]){
         if(!countsuccess_nolimits.count(cchipid)){
           countsuccess_nolimits[cchipid][0] = 1; //un-success
           countsuccess_nolimits[cchipid][1] = 1; //count entries
@@ -145,32 +163,13 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
           countsuccess_nolimits[cchipid][1] ++; //count entries
         }
       }
-      else if(/*!success[icol] &&*/ (int)noise[icol]>=15){
-        if(!countsuccess_highnoise.count(cchipid)){
-          countsuccess_highnoise[cchipid][0] = 1; //un-success
-          countsuccess_highnoise[cchipid][1] = 1; //count entries
-        }
-        else {
-          countsuccess_highnoise[cchipid][0] ++; //un-success
-          countsuccess_highnoise[cchipid][1] ++; //count entries
-        }
-      }
       else {
-
         if(!countsuccess_nolimits.count(cchipid)){
           countsuccess_nolimits[cchipid][1] = 1; //count entries
         }
         else {
           countsuccess_nolimits[cchipid][1] ++; //count entries
         }
-
-        if(!countsuccess_highnoise.count(cchipid)){
-          countsuccess_highnoise[cchipid][1] = 1; //count entries
-        }
-        else {
-          countsuccess_highnoise[cchipid][1] ++; //count entries
-        }
-
       }
 
       //Calculate sums for averages
@@ -196,6 +195,11 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
     }
   }
 
+  //Output file 
+  TFile *outfl1chip = new TFile(Form("p2_run%d.root",runnum), "RECREATE");
+  hthr1chip->Write();
+  outfl1chip->Close();
+
   //TH2 for IB
   TH2F *hAvgThr = new TH2F("hthrIB",Form("%s; Chip; Stave",title.c_str()),9,-0.5,8.5,48,-0.5,47.5);
   TH2F *hAvgNoi = new TH2F("hnoiIB",Form("%s; Chip; Stave)",title.c_str()),9,-0.5,8.5,48,-0.5,47.5);
@@ -204,42 +208,56 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
   TH2F *hAvgThrOL = new TH2F("hthrOL",Form("%s; Chip; Stave",title.c_str()),196,-0.5,195.5,90,-0.5,89.5);
   TH2F *hAvgNoiOL = new TH2F("hnoiOL",Form("%s; Chip; Stave)",title.c_str()),196,-0.5,195.5,90,-0.5,89.5);
   hAvgThr->SetStats(0);hAvgNoi->SetStats(0);hAvgThrML->SetStats(0);hAvgNoiML->SetStats(0);hAvgThrOL->SetStats(0);hAvgNoiOL->SetStats(0);
-
+  
+  TH1F *hThrDistChipLayer[7];
+  for(int i=0; i<7; i++){
+    hThrDistChipLayer[i] = new TH1F(Form("hthrdistchiplayer%d",i),Form("Layer %d - %s; Chip threshold (e-); Counts",i,title.c_str()), 120,1, 400);
+  }
   //loop over map, calculate averages, convert chipid, fill plot
-  for(auto const& [chipID, t_arr] : countsum){
-    if(!t_arr[4]) continue;
-    mp.expandChipInfoHW(chipID, lay,sta, ssta, mod,  chipInMod);
-    if(lay<3){//IB
-      int stabin = !lay ? sta : lay==1 ? sta+nStaves[lay-1] : sta+nStaves[lay-2]+nStaves[lay-1];
-      hAvgThr->SetBinContent(chipInMod+1, stabin+1, t_arr[0] / t_arr[4]);
-      hAvgNoi->SetBinContent(chipInMod+1, stabin+1, t_arr[1] / t_arr[4]);
-    }
-    else{
-      if(lay<5){//ML
-        int chipbin = chipInMod<7 ? (chipInMod+1)+14*(mod-1)+ssta*56 : chipInMod+14*(mod-1)+ssta*56;
-        int stabin = lay==3 ? sta : sta+nStaves[lay-1];
-        hAvgThrML->SetBinContent(chipbin, stabin+1, t_arr[0] / t_arr[4]);
-        hAvgNoiML->SetBinContent(chipbin, stabin+1, t_arr[1] / t_arr[4]);
+  if(!isDigital) {
+    for(auto const& [chipID, t_arr] : countsum){
+      if(!t_arr[4]) continue;
+      mp.expandChipInfoHW(chipID, lay,sta, ssta, mod,  chipInMod);
+      if(lay<3){//IB
+        int stabin = !lay ? sta : lay==1 ? sta+nStaves[lay-1] : sta+nStaves[lay-2]+nStaves[lay-1];
+        hAvgThr->SetBinContent(chipInMod+1, stabin+1, t_arr[0] / t_arr[4]);
+        hAvgNoi->SetBinContent(chipInMod+1, stabin+1, t_arr[1] / t_arr[4]);
+        hThrDistChipLayer[lay] -> Fill(t_arr[0] / t_arr[4]);
       }
-      else {
-        int chipbin = chipInMod<7 ? (chipInMod+1)+14*(mod-1)+ssta*98 : chipInMod+14*(mod-1)+ssta*98;
-        int stabin = lay==5 ? sta : sta+nStaves[lay-1];
-        hAvgThrOL->SetBinContent(chipbin, stabin+1, t_arr[0] / t_arr[4]);
-        hAvgNoiOL->SetBinContent(chipbin, stabin+1, t_arr[1] / t_arr[4]);
+      else{
+        if(lay<5){//ML
+          int chipbin = chipInMod<7 ? (chipInMod+1)+14*(mod-1)+ssta*56 : chipInMod+14*(mod-1)+ssta*56;
+          int stabin = lay==3 ? sta : sta+nStaves[lay-1];
+          hAvgThrML->SetBinContent(chipbin, stabin+1, t_arr[0] / t_arr[4]);
+          hAvgNoiML->SetBinContent(chipbin, stabin+1, t_arr[1] / t_arr[4]);
+          hThrDistChipLayer[lay] -> Fill(t_arr[0] / t_arr[4]);
+        }
+        else {
+          int chipbin = chipInMod<7 ? (chipInMod+1)+14*(mod-1)+ssta*98 : chipInMod+14*(mod-1)+ssta*98;
+          int stabin = lay==5 ? sta : sta+nStaves[lay-1];
+          hAvgThrOL->SetBinContent(chipbin, stabin+1, t_arr[0] / t_arr[4]);
+          hAvgNoiOL->SetBinContent(chipbin, stabin+1, t_arr[1] / t_arr[4]);
+          hThrDistChipLayer[lay] -> Fill(t_arr[0] / t_arr[4]);
+        }
       }
     }
   }
 
-  /*TFile *outROOT = new TFile(Form("../Data/out_threshold_run%d.root",runnum),"RECREATE");
-  hAvgThr->SetName(Form("hAvgThrIB_run%d_1600000000000",runnum));
-  hAvgThrML->SetName(Form("hAvgThrML_run%d_1600000000001",runnum));
-  hAvgThrOL->SetName(Form("hAvgThrOL_run%d_1600000000001",runnum));
-  hAvgThr->Write();
-  hAvgThrOL->Write();
-  hAvgThrML->Write();
+  TFile *outROOT = new TFile(Form("../Plots/out_scan_run%d.root",runnum),"RECREATE");
+  //hAvgThr->SetName(Form("hAvgThrIB_run%d_1600000000000",runnum));
+  //hAvgThrML->SetName(Form("hAvgThrML_run%d_1600000000001",runnum));
+  //hAvgThrOL->SetName(Form("hAvgThrOL_run%d_1600000000001",runnum));
+  hThrMapStave->Write();
+  for(int i=0; i<3; i++){
+    hThrMapL[i]->Write();
+  }
+  for(int i=0; i<7; i++) {
+    hThrLayer[i]->Write();
+  }
   outROOT->Close();
-  delete outROOT;*/
-
+  delete outROOT;
+  
+  
   //Fill histograms showing averages per HIC (and not per chip)
   TH2F *hAvgThrML_hic = new TH2F("hthrML_hic",Form("%s; Module; Stave",title.c_str()),8,-0.5,7.5,54,-0.5,53.5);
   TH2F *hAvgNoiML_hic = new TH2F("hnoiML_hic",Form("%s; Module; Stave)",title.c_str()),8,-0.5,7.5,54,-0.5,53.5);
@@ -291,10 +309,21 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
   //Fill histo showing unsuccess rate in the case: no limits
   for(auto const& [chipID, t_arr] : countsuccess_nolimits){
     hUnSuccess_nolimits->SetBinContent(chipID+1, ((float)t_arr[0] / (float)t_arr[1]) * 100.);
-  }
-  //Fill histo showing unsuccess rate in the case: high noise
-  for(auto const& [chipID, t_arr] : countsuccess_highnoise){
-    hUnSuccess_highnoise->SetBinContent(chipID+1, ((float)t_arr[0] / (float)t_arr[1]) * 100.);
+    mp.expandChipInfoHW(chipID, lay,sta, ssta, mod,  chipInMod);
+    if(lay<3) {
+      int stabin = !lay ? sta : lay==1 ? sta+nStaves[lay-1] : sta+nStaves[lay-2]+nStaves[lay-1];  
+      hUnSuccess2D_IB->SetBinContent(chipInMod+1, stabin+1, ((float)t_arr[0] / (float)t_arr[1]) * 100.);
+    } else {
+      if(lay<5) {
+        int chipbin = chipInMod<7 ? (chipInMod+1)+14*(mod-1)+ssta*56 : chipInMod+14*(mod-1)+ssta*56;
+        int stabin = lay==3 ? sta : sta+nStaves[lay-1];
+        hUnSuccess2D_ML->SetBinContent(chipbin, stabin+1, ((float)t_arr[0] / (float)t_arr[1]) * 100.);
+      } else {
+        int chipbin = chipInMod<7 ? (chipInMod+1)+14*(mod-1)+ssta*98 : chipInMod+14*(mod-1)+ssta*98;
+        int stabin = lay==5 ? sta : sta+nStaves[lay-1];
+        hUnSuccess2D_OL->SetBinContent(chipbin, stabin+1, ((float)t_arr[0] / (float)t_arr[1]) * 100.);
+      }
+    }        
   }
 
   //calculate distributions of number of rows
@@ -311,7 +340,7 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
     switch(i){
       case 0: hRowsCountIB->Draw("HIST"); cRowCount.SaveAs(Form("../Plots/RowCount_run%d.pdf[",runnum)); cRowCount.SaveAs(Form("../Plots/RowCount_run%d.pdf",runnum)); break;
       case 1: hRowsCountML->Draw("HIST"); cRowCount.SaveAs(Form("../Plots/RowCount_run%d.pdf",runnum)); break;
-      case 2: hRowsCountOL->Draw("HIST"); cRowCount.SaveAs(Form("../Plots/RowCount_run%d.pdf",runnum)); break;
+      case 2: hRowsCountOL->Draw("HIST"); hRowsCountOL->GetXaxis()->SetRangeUser(21768,21795); cRowCount.SaveAs(Form("../Plots/RowCount_run%d.pdf",runnum)); break;
       case 3: hRowsCountDistIB->Draw("HIST"); cRowCount.SetLogy(); cRowCount.SaveAs(Form("../Plots/RowCount_run%d.pdf",runnum)); break;
       case 4: hRowsCountDistML->Draw("HIST"); cRowCount.SetLogy(); cRowCount.SaveAs(Form("../Plots/RowCount_run%d.pdf",runnum)); break;
       case 5: hRowsCountDistOL->Draw("HIST"); cRowCount.SetLogy(); cRowCount.SaveAs(Form("../Plots/RowCount_run%d.pdf",runnum)); cRowCount.SaveAs(Form("../Plots/RowCount_run%d.pdf]",runnum)); break;
@@ -324,20 +353,24 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
   //if(stavemap.find("L0")!=string::npos || stavemap.find("L1")!=string::npos || stavemap.find("L2")!=string::npos){
     //hThrMapStave->GetYaxis()->SetRangeUser(4,26);
   //}
-  cMapStave.SaveAs(Form("../Plots/%s_thr_map_run%d.png",stavemap.c_str(),runnum));
+  hThrMapStave->SetMinimum(4);
+  hThrMapStave->SetMaximum(150);
+  cMapStave.SaveAs(Form("../Plots/%s_thr_map_run%d.png",stavemap.c_str(),runnum)); 
 
   //Draw unsuccess rate
-  for(int i=0; i<2; i++){
-    TCanvas cUnSucc("cUnSucc","cUnSucc",1800, 700);
-    cUnSucc.SetLogy();
-    i==0 ? hUnSuccess_nolimits->Draw("HIST") : hUnSuccess_highnoise->Draw("HIST");
-    if(!i) cUnSucc.SaveAs(Form("../Plots/UnsuccessRate_run%d.pdf[",runnum));
-    cUnSucc.SaveAs(Form("../Plots/UnsuccessRate_run%d.pdf",runnum));
-    if(i==1) cUnSucc.SaveAs(Form("../Plots/UnsuccessRate_run%d.pdf]",runnum));
+  TCanvas cUnSucc("cUnSucc","cUnSucc",1800, 700);
+  cUnSucc.SetLogy();
+  hUnSuccess_nolimits->Draw("HIST");
+  if(zoomIB) {
+    hUnSuccess_nolimits->GetXaxis()->SetRangeUser(0,432);
   }
-
-
+  cUnSucc.SaveAs(Form("../Plots/UnsuccessRate_run%d.pdf",runnum));
+  
   //Draw plots with threshold and noise distributions per chip id
+  if(zoomIB){
+    hThrChip->GetXaxis()->SetRangeUser(0,432);
+    hNoiseChip->GetXaxis()->SetRangeUser(0,432);
+  }
   for(int i=0; i<2; i++){
     TCanvas cchips("cDistChipid","cDistChipid",1800, 700);
     cchips.SetLogz();
@@ -391,13 +424,28 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
   lattitle->DrawLatex(0.97,0.8,"Noise (#it{e^{-}})");
   cNOIIB->SaveAs(Form("../Plots/Noise_IB_run%d.pdf", runnum));
 
+  TCanvas *cUnSuccessIB = new TCanvas("cUnSuccessIB","cUnSuccessIB",1100,1800);
+  cUnSuccessIB->SetMargin(0.099, 0.1632, 0.1007, 0.0999);
+  hUnSuccess2D_IB->Draw("colz");
+  hUnSuccess2D_IB->SetMaximum(100);
+  hUnSuccess2D_IB->SetMinimum(0);
+  hUnSuccess2D_IB->GetXaxis()->SetTickLength(0.01);
+  hUnSuccess2D_IB->GetYaxis()->SetTickLength(0.02);
+  l01->Draw();
+  l12->Draw();
+  lat->DrawLatex(0,9,"L0");
+  lat->DrawLatex(0,25,"L1");
+  lat->DrawLatex(0,45,"L2");
+  lattitle->DrawLatex(0.97,0.7,"Unsuccess (%)");
+  cUnSuccessIB->SaveAs(Form("../Plots/Unsuccess_IB_run%d.pdf", runnum)); 
+
   ///
   /// ML
   ///
   TCanvas *cTHRML = new TCanvas("cTHRML","cTHRML",1100,1800);
   cTHRML->SetMargin(0.099, 0.1632, 0.1007, 0.0999);
   hAvgThrML->Draw("colz");
-  hAvgThrML->SetMaximum(280);
+  hAvgThrML->SetMaximum(300);
   hAvgThrML->SetMinimum(50);
   hAvgThrML->GetXaxis()->SetTickLength(0.01);
   hAvgThrML->GetYaxis()->SetTickLength(0.02);
@@ -424,7 +472,7 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
   TCanvas *cTHRML_hic = new TCanvas("cTHRML_hic","cTHRML_hic",1100,1800);
   cTHRML_hic->SetMargin(0.099, 0.1632, 0.1007, 0.0999);
   hAvgThrML_hic->Draw("colz");
-  hAvgThrML_hic->SetMaximum(280);
+  hAvgThrML_hic->SetMaximum(300);
   hAvgThrML_hic->SetMinimum(50);
   hAvgThrML_hic->GetXaxis()->SetTickLength(0.01);
   hAvgThrML_hic->GetYaxis()->SetTickLength(0.02);
@@ -447,6 +495,19 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
   lat->DrawLatex(1,50,"L4");
   lattitle->DrawLatex(0.97,0.8,"Noise (#it{e^{-}})");
   cNOIML_hic->SaveAs(Form("../Plots/Noise_ML_HIC_run%d.pdf", runnum));
+  
+  TCanvas *cUnSuccessML = new TCanvas("cUnSuccessML","cUnSuccessML",1100,1800);
+  cUnSuccessML->SetMargin(0.099, 0.1632, 0.1007, 0.0999);
+  hUnSuccess2D_ML->Draw("colz");
+  hUnSuccess2D_ML->SetMaximum(100);
+  hUnSuccess2D_ML->SetMinimum(0);
+  hUnSuccess2D_ML->GetXaxis()->SetTickLength(0.01);
+  hUnSuccess2D_ML->GetYaxis()->SetTickLength(0.02);
+  l34->Draw();
+  lat->DrawLatex(1,20,"L3");
+  lat->DrawLatex(1,50,"L4");
+  lattitle->DrawLatex(0.97,0.7,"Unsuccess (%)");
+  cUnSuccessML->SaveAs(Form("../Plots/Unsuccess_ML_run%d.pdf", runnum));
 
   ///
   /// OL
@@ -454,7 +515,7 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
   TCanvas *cTHROL = new TCanvas("cTHROL","cTHROL",1100,1800);
   cTHROL->SetMargin(0.099, 0.1632, 0.1007, 0.0999);
   hAvgThrOL->Draw("colz");
-  hAvgThrOL->SetMaximum(280);
+  hAvgThrOL->SetMaximum(300);
   hAvgThrOL->SetMinimum(50);
   hAvgThrOL->GetXaxis()->SetTickLength(0.01);
   hAvgThrOL->GetYaxis()->SetTickLength(0.02);
@@ -481,7 +542,7 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
   TCanvas *cTHROL_hic = new TCanvas("cTHROL_hic","cTHROL_hic",1100,1800);
   cTHROL_hic->SetMargin(0.099, 0.1632, 0.1007, 0.0999);
   hAvgThrOL_hic->Draw("colz");
-  hAvgThrOL_hic->SetMaximum(280);
+  hAvgThrOL_hic->SetMaximum(300);
   hAvgThrOL_hic->SetMinimum(50);
   hAvgThrOL_hic->GetXaxis()->SetTickLength(0.01);
   hAvgThrOL_hic->GetYaxis()->SetTickLength(0.02);
@@ -504,10 +565,24 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
   lat->DrawLatex(1,84,"L6");
   lattitle->DrawLatex(0.97,0.8,"Noise (#it{e^{-}})");
   cNOIOL_hic->SaveAs(Form("../Plots/Noise_OL_HIC_run%d.pdf", runnum));
-
+  
+  TCanvas *cUnSuccessOL = new TCanvas("cUnSuccessOL","cUnSuccessOL",1100,1800);
+  cUnSuccessOL->SetMargin(0.099, 0.1632, 0.1007, 0.0999);
+  hUnSuccess2D_OL->Draw("colz");
+  hUnSuccess2D_OL->SetMaximum(100);
+  hUnSuccess2D_OL->SetMinimum(0);
+  hUnSuccess2D_OL->GetXaxis()->SetTickLength(0.01);
+  hUnSuccess2D_OL->GetYaxis()->SetTickLength(0.02);
+  l56->Draw();
+  lat->DrawLatex(1,35,"L5");
+  lat->DrawLatex(1,84,"L6");
+  lattitle->DrawLatex(0.97,0.7,"Unsuccess (%)");
+  cUnSuccessOL->SaveAs(Form("../Plots/Unsuccess_OL_run%d.pdf", runnum));
+ 
   //Draw thrshold distributions
   for(int il=0; il<7; il++){
     TCanvas cThrLay;
+    cThrLay.SetLogy();
     hThrLayer[il]->Draw("HIST");
     //cThrLay.SetLogy();
     if(!il) cThrLay.SaveAs(Form("../Plots/ThresholdDist_run%d.pdf[",runnum));
@@ -515,6 +590,16 @@ void readthresholdtree_summary(std::string treepath = "../Data/tree.root", std::
     if(il==6) cThrLay.SaveAs(Form("../Plots/ThresholdDist_run%d.pdf]",runnum));
   }
 
+  //Draw thr distribution per layer with fills per chip 
+  for(int il=0; il<7; il++){
+    TCanvas cThrLay;
+    cThrLay.SetLogy();
+    hThrDistChipLayer[il]->Draw("HIST");
+    cThrLay.SetLogy();
+    if(!il) cThrLay.SaveAs(Form("../Plots/ThresholdDistChipsLayer_run%d.pdf[",runnum));
+    cThrLay.SaveAs(Form("../Plots/ThresholdDistChipsLayer_run%d.pdf",runnum));
+    if(il==6) cThrLay.SaveAs(Form("../Plots/ThresholdDistChipsLayer_run%d.pdf]",runnum));
+  }
 }
 
 short int chipToLayer(int chipid){
